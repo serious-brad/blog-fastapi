@@ -6,3 +6,4 @@ https://github.com/CoreyMSchafer/FastAPI-Full-Course
 
 # App start
 uv run fastapi dev .\main.py
+uv run --no-project fastapi dev main.py
