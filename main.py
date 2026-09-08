@@ -1,3 +1,5 @@
+from turtle import title
+
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -39,18 +41,19 @@ def home(request: Request):
 
 @app.get("/posts/{post_id}", include_in_schema=False, name="post")
 def get_post(request: Request, post_id: int):
-    post = next(post for post in posts if post["id"] == post_id)
-    if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id {post_id} not found",
-        )
+    for post in posts:
+        if post.get("id") == post_id:
+            title = post["title"][:50]
+            
+            return templates.TemplateResponse(
+                request, "post.html", {"post": post, "title": title}
+            )
 
-    title = post["title"][:50]
-
-    return templates.TemplateResponse(
-        request, "post.html", {"post": post, "title": title}
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Post with id {post_id} not found",
     )
+
 
 
 @app.get("/api/posts")
@@ -60,22 +63,19 @@ def get_posts():
 
 @app.get("/api/post/{post_id}")
 def get_post(post_id: int):
-    post = next(post for post in posts if post["id"] == post_id)
-    if not post:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Post with id {post_id} not found",
-        )
-    return post
+    for post in posts:
+        if post.get("id") == post_id:
+            return post
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Post with id {post_id} not found",
+    )
 
 
 @app.exception_handler(StarletteHTTPException)
 def general_http_exception_handler(request: Request, exc: StarletteHTTPException):
-    message = (
-        (exc.detail if isinstance(exc.detail, str) else exc.detail[0].msg)
-        if exc.detail
-        else "An error occurred"
-    )
+    message = exc.detail if exc.detail else "An error occurred"
     if request.url.path.startswith("/api"):
         return JSONResponse(
             status_code=exc.status_code,
@@ -87,4 +87,23 @@ def general_http_exception_handler(request: Request, exc: StarletteHTTPException
         "error.html",
         {"title": exc.status_code, "status_code": exc.status_code, "message": message},
         status_code=exc.status_code,
+    )
+
+@app.exception_handler(RequestValidationError)
+def validation_exception_handler(request: Request, exc: RequestValidationError):
+    if request.url.path.startswith("/api"):
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": exc.errors()},
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "error.html",
+        {
+            "title": status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "message": "Invalid request data. Please check your input and try again.",
+        },
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
