@@ -1,11 +1,11 @@
-from turtle import title
-
 from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+from schemas import PostResponse, PostCreate
 
 app = FastAPI()
 
@@ -44,7 +44,7 @@ def get_post(request: Request, post_id: int):
     for post in posts:
         if post.get("id") == post_id:
             title = post["title"][:50]
-            
+
             return templates.TemplateResponse(
                 request, "post.html", {"post": post, "title": title}
             )
@@ -55,13 +55,12 @@ def get_post(request: Request, post_id: int):
     )
 
 
-
-@app.get("/api/posts")
+@app.get("/api/posts", response_model=list[PostResponse])
 def get_posts():
     return posts
 
 
-@app.get("/api/post/{post_id}")
+@app.get("/api/post/{post_id}", response_model=PostResponse)
 def get_post(post_id: int):
     for post in posts:
         if post.get("id") == post_id:
@@ -88,6 +87,7 @@ def general_http_exception_handler(request: Request, exc: StarletteHTTPException
         {"title": exc.status_code, "status_code": exc.status_code, "message": message},
         status_code=exc.status_code,
     )
+
 
 @app.exception_handler(RequestValidationError)
 def validation_exception_handler(request: Request, exc: RequestValidationError):

@@ -1,5 +1,5 @@
 # Course:
-https://youtu.be/iukOehU5aF4?si=EF95SA6pTbkGYXa7&t=5658
+https://youtu.be/iukOehU5aF4?si=mNmGPdRUU1V598Qg&t=6558
 
 # Course github repository
 https://github.com/CoreyMSchafer/FastAPI-Full-Course
